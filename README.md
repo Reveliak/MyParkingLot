@@ -380,13 +380,12 @@ Se realizaron sesiones de testing de usabilidad con 10 empleados de la empresa d
 
 ---
 
-### Sesión #4 - Usuario Facilities (Mujer, 38 años, Coordinadora Administrativa)
+### Sesión #4 - Usuario Facilities (Mujer, 38 años, Coordinadora)
 
 **Escenario**: Gestión de plazas y resolución de no-shows
 
 **Observaciones**:
 - Accedió al panel administrativo
-- Comentó: *"Esto me ahorraría horas de trabajo manual con Excel"*
 - Liberó una plaza en estado no-show sin dificultad
 - Preguntó: *"¿Se pueden generar reportes por usuario para identificar patrones?"*
 - Valoró la visualización en tiempo real
@@ -422,7 +421,7 @@ Se realizaron sesiones de testing de usabilidad con 10 empleados de la empresa d
 
 ---
 
-### Sesión #6 - Usuario Plaza Fija (Mujer, 52 años, Directora de RRHH)
+### Sesión #6 - Usuario Plaza Fija (Mujer, 52 años, RRHH)
 
 **Escenario**: Consulta de disponibilidad sin realizar acción
 
