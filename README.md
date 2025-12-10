@@ -314,7 +314,7 @@ El prototipo incluye logs descriptivos en consola para debugging:
 ## 🧪 Resultados de Testeos con Usuarios - Fase 5
 
 ### Contexto del Testing
-Se realizaron sesiones de testing de usabilidad con 10 empleados de **Mariel Mereles & Asociados** durante la semana del 9 al 13 de diciembre de 2025. Los participantes fueron seleccionados para representar los tres perfiles de usuario identificados: empleados sin plaza fija (Infield Team), empleados con plaza asignada, y personal de Facilities.
+Se realizaron sesiones de testing de usabilidad con 10 empleados de la empresa de Mariel Mereles y durante los dias del 1 al 09 de diciembre de 2025. Los participantes fueron seleccionados para representar los tres perfiles de usuario identificados: empleados sin plaza fija (Infield Team), empleados con plaza asignada, y personal de Facilities.
 
 **Metodología**: Sesiones individuales de 20-30 minutos, observación directa, think-aloud protocol, y cuestionario post-test.
 
