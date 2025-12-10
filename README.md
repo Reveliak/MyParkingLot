@@ -594,39 +594,6 @@ El sistema está **listo para desarrollo de MVP** con las iteraciones de alta pr
 
 ---
 
-## 📦 Próximos Pasos (Post-Testing)
-
-### Fase 5: Test
-1. Realizar sesiones de testing con usuarios reales (cada perfil)
-2. Observar interacciones y puntos de fricción
-3. Recopilar feedback cualitativo
-4. Identificar pain points no anticipados
-
-### Iteraciones Potenciales
-- Ajustar mensajes según feedback emocional
-- Simplificar pasos si hay confusión
-- Agregar/quitar información según necesidad
-- Refinar reglas del sistema (10 min, prioridades, etc.)
-
-### Evolución a MVP Funcional
-Una vez validado el prototipo:
-- Definir stack tecnológico (React, Node.js, MongoDB, etc.)
-- Integrar backend real con base de datos
-- Implementar notificaciones push reales
-- Agregar módulo IoT opcional (sensores, lectores)
-- Desarrollar app móvil nativa (iOS/Android)
-
----
-
-## 👥 Equipo del Proyecto
-
-- **Diseño UX/UI**: Basado en metodología Design Thinking
-- **Desarrollo**: Prototipo low-fidelity navegable
-- **Research**: Encuestas (N=26) y entrevistas cualitativas
-- **Testing**: Preparado para Fase 5 con usuarios reales
-
----
-
 ## 📚 Documentación de Referencia
 
 ### Metodología Aplicada
