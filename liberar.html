@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liberar Plaza - MyParkingLot</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <h1>MyParkingLot</h1>
+            </div>
+            <div class="user-info">
+                <span id="userGreeting">Usuario</span>
+                <button class="btn-link" onclick="volverDashboard()">← Volver</button>
+            </div>
+        </header>
+
+        <!-- Pantalla de liberación -->
+        <main class="liberar-container">
+            <h2>Liberar mi Plaza de Estacionamiento</h2>
+
+            <div class="liberar-content">
+                <!-- Información de la plaza asignada -->
+                <div class="plaza-info-card">
+                    <div class="plaza-icon">🅿️</div>
+                    <div class="plaza-details">
+                        <h3>Tu plaza asignada</h3>
+                        <p class="plaza-numero-grande">#18</p>
+                        <p class="plaza-tipo">Plaza fija por seniority</p>
+                    </div>
+                </div>
+
+                <!-- Mensaje colaborativo -->
+                <div class="mensaje-colaborativo">
+                    <div class="icono-colaboracion">🤝</div>
+                    <h3>¿Hoy no vas a utilizar tu plaza?</h3>
+                    <p>Si hoy trabajás desde casa o no vas a necesitar tu plaza asignada, podés liberarla temporalmente para que otro compañero la aproveche.</p>
+
+                    <div class="beneficios-liberacion">
+                        <p><strong>Al liberar tu plaza:</strong></p>
+                        <ul>
+                            <li>✅ Ayudás a un compañero que la necesita</li>
+                            <li>✅ Optimizás el uso del recurso</li>
+                            <li>✅ Contribuís al equipo</li>
+                            <li>✅ Tu plaza vuelve a estar disponible mañana</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Estado de lista de espera -->
+                <div class="info-box">
+                    <p><strong>📋 Usuarios en lista de espera:</strong></p>
+                    <p id="listaEsperaInfo">Cargando...</p>
+                </div>
+
+                <!-- Formulario de liberación -->
+                <form id="liberarForm" class="liberar-form">
+                    <div class="form-group">
+                        <label>¿En qué horario vas a liberar tu plaza?</label>
+
+                        <div class="opciones-horario">
+                            <label class="radio-card">
+                                <input
+                                    type="radio"
+                                    name="horarioLiberacion"
+                                    value="todo"
+                                    checked
+                                >
+                                <div class="radio-content">
+                                    <strong>Todo el día</strong>
+                                    <span>(08:00 - 18:00)</span>
+                                </div>
+                            </label>
+
+                            <label class="radio-card">
+                                <input
+                                    type="radio"
+                                    name="horarioLiberacion"
+                                    value="manana"
+                                >
+                                <div class="radio-content">
+                                    <strong>Solo mañana</strong>
+                                    <span>(08:00 - 14:00)</span>
+                                </div>
+                            </label>
+
+                            <label class="radio-card">
+                                <input
+                                    type="radio"
+                                    name="horarioLiberacion"
+                                    value="tarde"
+                                >
+                                <div class="radio-content">
+                                    <strong>Solo tarde</strong>
+                                    <span>(14:00 - 18:00)</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="form-actions">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="volverDashboard()"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="btnLiberar"
+                        >
+                            SÍ, LIBERAR PLAZA HOY
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Mensaje de agradecimiento -->
+                <div class="agradecimiento" id="mensajeGracias" style="display: none;">
+                    <div class="icono-exito">✅</div>
+                    <h3>¡Gracias por colaborar!</h3>
+                    <p>Tu plaza ha sido liberada y está disponible para otros empleados.</p>
+                    <p>El sistema notificó automáticamente a los usuarios en lista de espera.</p>
+
+                    <button class="btn btn-primary" onclick="volverDashboard()">
+                        VOLVER AL INICIO
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>MyParkingLot - Prototipo Low-Fidelity</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            inicializarLiberacion();
+        });
+
+        function inicializarLiberacion() {
+            // Verificar autenticación
+            const userName = sessionStorage.getItem('userName');
+            const userType = sessionStorage.getItem('userType');
+
+            if (!userName) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Verificar que sea usuario con plaza fija
+            if (userType !== 'fixed') {
+                alert('Esta función es solo para usuarios con plaza asignada');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = userName;
+
+            // Cargar información de lista de espera
+            cargarListaEspera();
+
+            // Listener del formulario
+            document.getElementById('liberarForm').addEventListener('submit', confirmarLiberacion);
+        }
+
+        function cargarListaEspera() {
+            const listaEsperaInfo = document.getElementById('listaEsperaInfo');
+            const listaEspera = window.MOCK_DATA.listaEspera;
+
+            if (listaEspera.length === 0) {
+                listaEsperaInfo.innerHTML = '<em>No hay usuarios en lista de espera en este momento</em>';
+            } else {
+                let html = `<strong>${listaEspera.length} ${listaEspera.length === 1 ? 'persona' : 'personas'} esperando:</strong><br>`;
+                listaEspera.slice(0, 3).forEach((item, index) => {
+                    html += `${index + 1}. ${item.usuarioNombre} - ${item.horario}<br>`;
+                });
+
+                if (listaEspera.length > 3) {
+                    html += `<em>...y ${listaEspera.length - 3} más</em>`;
+                }
+
+                listaEsperaInfo.innerHTML = html;
+            }
+        }
+
+        function confirmarLiberacion(e) {
+            e.preventDefault();
+
+            const horarioSeleccionado = document.querySelector('input[name="horarioLiberacion"]:checked').value;
+            const userName = sessionStorage.getItem('userName');
+
+            let horarioTexto = '';
+            switch(horarioSeleccionado) {
+                case 'todo':
+                    horarioTexto = 'todo el día (08:00-18:00)';
+                    break;
+                case 'manana':
+                    horarioTexto = 'la mañana (08:00-14:00)';
+                    break;
+                case 'tarde':
+                    horarioTexto = 'la tarde (14:00-18:00)';
+                    break;
+            }
+
+            // Confirmación
+            const confirmacion = confirm(
+                `¿Confirmas que querés liberar tu plaza #18 para ${horarioTexto}?\n\n` +
+                `El sistema notificará automáticamente a los usuarios en lista de espera.`
+            );
+
+            if (!confirmacion) return;
+
+            // Simular liberación
+            window.actualizarEstadoPlaza(18, 'libre', null);
+
+            // Notificar al próximo en espera
+            const proximoNotificado = window.notificarProximoEnEspera();
+
+            if (proximoNotificado) {
+                console.log(`📱 Notificación enviada a: ${proximoNotificado.usuarioNombre}`);
+            }
+
+            // Guardar evento de liberación
+            const liberacion = {
+                plazaId: 18,
+                usuario: userName,
+                horario: horarioTexto,
+                fecha: window.getFechaActual(),
+                timestamp: new Date().getTime()
+            };
+
+            localStorage.setItem('ultimaLiberacion', JSON.stringify(liberacion));
+
+            // Ocultar formulario y mostrar agradecimiento
+            document.getElementById('liberarForm').style.display = 'none';
+            document.querySelector('.plaza-info-card').style.display = 'none';
+            document.querySelector('.mensaje-colaborativo').style.display = 'none';
+            document.querySelector('.info-box').style.display = 'none';
+            document.getElementById('mensajeGracias').style.display = 'block';
+
+            // Mostrar notificación
+            window.mostrarNotificacion('✅ Plaza liberada exitosamente', 'success');
+        }
+
+        function volverDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

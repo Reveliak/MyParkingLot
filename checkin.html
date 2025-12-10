@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in - MyParkingLot</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <h1>MyParkingLot</h1>
+            </div>
+            <div class="user-info">
+                <span id="userGreeting">Usuario</span>
+            </div>
+        </header>
+
+        <!-- Pantalla de check-in -->
+        <main class="checkin-container">
+            <!-- Vista previa a check-in -->
+            <div id="vistaPreCheckin">
+                <h2>¡Reserva Confirmada!</h2>
+                <p class="subtitle">Recordá realizar el check-in al llegar al edificio</p>
+
+                <!-- Información de la reserva -->
+                <div class="reserva-card">
+                    <div class="reserva-icon">✅</div>
+                    <div class="reserva-info">
+                        <h3>Tu reserva</h3>
+                        <p><strong>Plaza:</strong> #<span id="plazaNumeroInfo">--</span></p>
+                        <p><strong>Fecha:</strong> <span id="fechaInfo">--</span></p>
+                        <p><strong>Horario:</strong> <span id="horarioInfo">--</span></p>
+                    </div>
+                </div>
+
+                <!-- Alerta importante -->
+                <div class="alert alert-danger">
+                    <h3>⚠️ IMPORTANTE</h3>
+                    <p>Debes realizar el <strong>check-in dentro de 10 minutos</strong> de tu horario de inicio.</p>
+                    <p>Si no lo hacés, la plaza se liberará automáticamente para otros usuarios.</p>
+                </div>
+
+                <!-- Botón principal -->
+                <div class="checkin-actions">
+                    <button
+                        type="button"
+                        class="btn btn-primary btn-large"
+                        onclick="realizarCheckin()"
+                    >
+                        🚗 REALIZAR CHECK-IN AHORA
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="volverDashboard()"
+                    >
+                        Volver al inicio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista durante countdown -->
+            <div id="vistaCountdown" style="display: none;">
+                <h2>⏱️ Check-in Pendiente</h2>
+
+                <div class="countdown-container">
+                    <div class="countdown-circle">
+                        <div class="countdown-display" id="countdownDisplay">10:00</div>
+                        <p>Tiempo restante</p>
+                    </div>
+
+                    <div class="countdown-info">
+                        <p>Tu reserva expirará si no hacés check-in antes de que termine el tiempo.</p>
+                        <p class="text-muted">Plaza: #<span id="plazaNumeroCountdown">--</span></p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-primary btn-large pulse"
+                    onclick="realizarCheckin()"
+                >
+                    HACER CHECK-IN
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-link"
+                    onclick="cancelarReserva()"
+                >
+                    Cancelar reserva
+                </button>
+            </div>
+
+            <!-- Vista post check-in exitoso -->
+            <div id="vistaExito" style="display: none;">
+                <div class="success-container">
+                    <div class="success-icon">✅</div>
+                    <h2>¡Check-in Exitoso!</h2>
+                    <p>Ya podés estacionar en tu plaza asignada</p>
+
+                    <div class="plaza-final-card">
+                        <h3>Tu plaza:</h3>
+                        <p class="plaza-numero-final">#<span id="plazaNumeroFinal">--</span></p>
+                        <p class="horario-final">Horario: <span id="horarioFinal">--</span></p>
+                    </div>
+
+                    <div class="info-box">
+                        <p><strong>🎉 ¡Listo!</strong></p>
+                        <p>Tu plaza está confirmada. Disfrutá tu día en la oficina.</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="volverDashboard()">
+                        VOLVER AL INICIO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista de reserva expirada -->
+            <div id="vistaExpirada" style="display: none;">
+                <div class="expired-container">
+                    <div class="expired-icon">⏰</div>
+                    <h2>Reserva Expirada</h2>
+                    <p>Tu reserva se liberó automáticamente por no realizar check-in a tiempo</p>
+
+                    <div class="alert alert-warning">
+                        <p>La plaza ha sido liberada y está disponible para otros usuarios.</p>
+                        <p>Podés hacer una nueva reserva si aún hay disponibilidad.</p>
+                    </div>
+
+                    <div class="expired-actions">
+                        <button class="btn btn-primary" onclick="nuevaReserva()">
+                            HACER NUEVA RESERVA
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="volverDashboard()">
+                            Volver al inicio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>MyParkingLot - Prototipo Low-Fidelity</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        let countdownInterval = null;
+
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            inicializarCheckin();
+        });
+
+        function inicializarCheckin() {
+            // Verificar autenticación
+            const userName = sessionStorage.getItem('userName');
+            if (!userName) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = userName;
+
+            // Cargar información de la reserva
+            const reserva = window.obtenerReserva();
+
+            if (!reserva) {
+                alert('No hay reserva activa');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Verificar si ya hizo check-in
+            if (reserva.checkinRealizado) {
+                mostrarVistaExito();
+                return;
+            }
+
+            // Mostrar información de la reserva
+            document.getElementById('plazaNumeroInfo').textContent = reserva.plazaNumero;
+            document.getElementById('fechaInfo').textContent = reserva.fecha;
+            document.getElementById('horarioInfo').textContent = reserva.horario;
+
+            // Verificar si debe iniciar countdown automáticamente
+            // (simulación: si ya pasaron más de 1 minuto desde la reserva)
+            const tiempoDesdeReserva = (new Date().getTime() - reserva.timestamp) / 1000;
+
+            if (tiempoDesdeReserva > 60) {
+                // Iniciar countdown automáticamente
+                iniciarCountdownAutomatico();
+            }
+        }
+
+        function iniciarCountdownAutomatico() {
+            const reserva = window.obtenerReserva();
+
+            // Ocultar vista previa y mostrar countdown
+            document.getElementById('vistaPreCheckin').style.display = 'none';
+            document.getElementById('vistaCountdown').style.display = 'block';
+
+            document.getElementById('plazaNumeroCountdown').textContent = reserva.plazaNumero;
+
+            // Iniciar countdown de 10 minutos (600 segundos)
+            // Para testing, usamos 60 segundos (1 minuto)
+            countdownInterval = window.iniciarCountdown(
+                'countdownDisplay',
+                60, // 60 segundos para testing (cambiar a 600 para 10 minutos reales)
+                onCountdownComplete
+            );
+        }
+
+        function onCountdownComplete() {
+            // Cuando el countdown llega a 0
+            console.log('⏰ Countdown completado - Liberando plaza');
+
+            const reserva = window.obtenerReserva();
+
+            // Liberar la plaza
+            window.actualizarEstadoPlaza(reserva.plazaId, 'libre', null);
+
+            // Notificar al próximo en espera
+            window.notificarProximoEnEspera();
+
+            // Eliminar reserva
+            window.eliminarReserva();
+
+            // Mostrar vista expirada
+            mostrarVistaExpirada();
+        }
+
+        function realizarCheckin() {
+            // Detener countdown si está corriendo
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            const reserva = window.obtenerReserva();
+
+            // Marcar check-in como realizado
+            reserva.checkinRealizado = true;
+            reserva.horaCheckin = window.getHoraActual();
+            window.guardarReserva(reserva);
+
+            // Actualizar estado de la plaza
+            window.actualizarEstadoPlaza(reserva.plazaId, 'ocupada', sessionStorage.getItem('userName'));
+
+            // Guardar timestamp de check-in
+            window.guardarTimestampCheckin();
+
+            // Mostrar vista de éxito
+            mostrarVistaExito();
+
+            // Notificación
+            window.mostrarNotificacion('✅ Check-in realizado exitosamente', 'success');
+        }
+
+        function mostrarVistaExito() {
+            const reserva = window.obtenerReserva();
+
+            // Ocultar todas las vistas
+            document.getElementById('vistaPreCheckin').style.display = 'none';
+            document.getElementById('vistaCountdown').style.display = 'none';
+            document.getElementById('vistaExpirada').style.display = 'none';
+
+            // Mostrar vista de éxito
+            document.getElementById('vistaExito').style.display = 'block';
+
+            // Completar información
+            document.getElementById('plazaNumeroFinal').textContent = reserva.plazaNumero;
+            document.getElementById('horarioFinal').textContent = reserva.horario;
+        }
+
+        function mostrarVistaExpirada() {
+            // Ocultar todas las vistas
+            document.getElementById('vistaPreCheckin').style.display = 'none';
+            document.getElementById('vistaCountdown').style.display = 'none';
+            document.getElementById('vistaExito').style.display = 'none';
+
+            // Mostrar vista expirada
+            document.getElementById('vistaExpirada').style.display = 'block';
+        }
+
+        function cancelarReserva() {
+            const confirmacion = confirm('¿Estás seguro que querés cancelar tu reserva?');
+
+            if (!confirmacion) return;
+
+            // Detener countdown
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            const reserva = window.obtenerReserva();
+
+            // Liberar plaza
+            window.actualizarEstadoPlaza(reserva.plazaId, 'libre', null);
+
+            // Notificar al próximo en espera
+            window.notificarProximoEnEspera();
+
+            // Eliminar reserva
+            window.eliminarReserva();
+
+            // Redirigir
+            window.location.href = 'dashboard.html';
+        }
+
+        function nuevaReserva() {
+            window.location.href = 'reservar.html';
+        }
+
+        function volverDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

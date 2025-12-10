@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Plaza - MyParkingLot</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <h1>MyParkingLot</h1>
+            </div>
+            <div class="user-info">
+                <span id="userGreeting">Usuario</span>
+                <button class="btn-link" onclick="volverDashboard()">← Volver</button>
+            </div>
+        </header>
+
+        <!-- Formulario de reserva -->
+        <main class="reserva-container">
+            <h2>Reservar Plaza de Estacionamiento</h2>
+            <p class="subtitle">Seleccioná fecha, horario y plaza disponible</p>
+
+            <form id="reservaForm" class="reserva-form">
+                <!-- Paso 1: Fecha y Horario -->
+                <div class="form-section">
+                    <h3>📅 Paso 1: Seleccioná fecha y horario</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fechaReserva">Fecha:</label>
+                            <input
+                                type="date"
+                                id="fechaReserva"
+                                name="fecha"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="horaInicio">Hora de inicio:</label>
+                            <select id="horaInicio" name="horaInicio" required>
+                                <option value="">-- Seleccionar --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="horaFin">Hora de fin:</label>
+                            <select id="horaFin" name="horaFin" required>
+                                <option value="">-- Seleccionar --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="info-message">
+                        <p>💡 <strong>Duración seleccionada:</strong> <span id="duracionTexto">-- horas</span></p>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Selección de Plaza -->
+                <div class="form-section" id="seccionPlazas" style="display: none;">
+                    <h3>🚗 Paso 2: Seleccioná tu plaza</h3>
+
+                    <div id="disponibilidadInfo" class="availability-info">
+                        <p>Plazas disponibles para tu horario:</p>
+                        <p class="stat-number" id="contadorDisponibles">0</p>
+                    </div>
+
+                    <div id="plazasGrid" class="plazas-grid">
+                        <!-- Las plazas se cargarán dinámicamente -->
+                    </div>
+
+                    <input type="hidden" id="plazaSeleccionada" name="plazaId">
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="form-actions">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="volverDashboard()"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="btnConfirmar"
+                        disabled
+                    >
+                        CONFIRMAR RESERVA
+                    </button>
+                </div>
+            </form>
+
+            <!-- Regla importante -->
+            <div class="alert alert-warning">
+                <p><strong>⚠️ Regla importante:</strong></p>
+                <p>La reserva se liberará automáticamente si no realizás <strong>check-in dentro de 10 minutos</strong> de tu horario de inicio.</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>MyParkingLot - Prototipo Low-Fidelity</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Variables globales
+        let plazaSeleccionadaId = null;
+
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            inicializarReserva();
+        });
+
+        function inicializarReserva() {
+            // Verificar autenticación
+            const userName = sessionStorage.getItem('userName');
+            if (!userName) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = userName;
+
+            // Configurar fecha mínima (hoy)
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaReserva').setAttribute('min', hoy);
+            document.getElementById('fechaReserva').value = hoy;
+
+            // Cargar horarios
+            cargarHorarios();
+
+            // Listeners
+            document.getElementById('horaInicio').addEventListener('change', actualizarDuracion);
+            document.getElementById('horaFin').addEventListener('change', actualizarDuracion);
+            document.getElementById('reservaForm').addEventListener('submit', confirmarReserva);
+        }
+
+        function cargarHorarios() {
+            const selectInicio = document.getElementById('horaInicio');
+            const selectFin = document.getElementById('horaFin');
+
+            // Limpiar opciones existentes
+            selectInicio.innerHTML = '<option value="">-- Seleccionar --</option>';
+            selectFin.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+            // Cargar horarios desde data
+            window.MOCK_DATA.horarios.forEach(hora => {
+                const optionInicio = document.createElement('option');
+                optionInicio.value = hora;
+                optionInicio.textContent = hora;
+                selectInicio.appendChild(optionInicio);
+
+                const optionFin = document.createElement('option');
+                optionFin.value = hora;
+                optionFin.textContent = hora;
+                selectFin.appendChild(optionFin);
+            });
+        }
+
+        function actualizarDuracion() {
+            const horaInicio = document.getElementById('horaInicio').value;
+            const horaFin = document.getElementById('horaFin').value;
+
+            if (!horaInicio || !horaFin) {
+                document.getElementById('duracionTexto').textContent = '-- horas';
+                document.getElementById('seccionPlazas').style.display = 'none';
+                return;
+            }
+
+            // Validar que hora fin sea posterior a hora inicio
+            if (!window.validarRangoHorario(horaInicio, horaFin)) {
+                alert('La hora de fin debe ser posterior a la hora de inicio');
+                document.getElementById('horaFin').value = '';
+                return;
+            }
+
+            const duracion = window.calcularDuracion(horaInicio, horaFin);
+            document.getElementById('duracionTexto').textContent = `${duracion} horas`;
+
+            // Mostrar sección de plazas
+            document.getElementById('seccionPlazas').style.display = 'block';
+
+            // Cargar plazas disponibles
+            cargarPlazasDisponibles();
+        }
+
+        function cargarPlazasDisponibles() {
+            const plazasGrid = document.getElementById('plazasGrid');
+            plazasGrid.innerHTML = '';
+
+            const plazasDisponibles = window.getPlazasDisponibles();
+            document.getElementById('contadorDisponibles').textContent = plazasDisponibles.length;
+
+            if (plazasDisponibles.length === 0) {
+                plazasGrid.innerHTML = '<p class="no-disponible">No hay plazas disponibles para este horario. Podés sumarte a la lista de espera.</p>';
+                return;
+            }
+
+            plazasDisponibles.forEach(plaza => {
+                const plazaCard = document.createElement('div');
+                plazaCard.className = 'plaza-card';
+                plazaCard.innerHTML = `
+                    <div class="plaza-numero">#${plaza.numero}</div>
+                    <div class="plaza-estado">Libre</div>
+                `;
+
+                plazaCard.addEventListener('click', () => seleccionarPlaza(plaza.id, plazaCard));
+                plazasGrid.appendChild(plazaCard);
+            });
+        }
+
+        function seleccionarPlaza(plazaId, cardElement) {
+            // Remover selección anterior
+            document.querySelectorAll('.plaza-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Marcar como seleccionada
+            cardElement.classList.add('selected');
+            plazaSeleccionadaId = plazaId;
+
+            // Guardar en input hidden
+            document.getElementById('plazaSeleccionada').value = plazaId;
+
+            // Habilitar botón de confirmar
+            document.getElementById('btnConfirmar').disabled = false;
+        }
+
+        function confirmarReserva(e) {
+            e.preventDefault();
+
+            if (!plazaSeleccionadaId) {
+                alert('Por favor seleccioná una plaza');
+                return;
+            }
+
+            const fecha = document.getElementById('fechaReserva').value;
+            const horaInicio = document.getElementById('horaInicio').value;
+            const horaFin = document.getElementById('horaFin').value;
+            const userName = sessionStorage.getItem('userName');
+
+            // Crear objeto reserva
+            const reserva = {
+                plazaId: plazaSeleccionadaId,
+                plazaNumero: window.getPlazaById(plazaSeleccionadaId).numero,
+                fecha: window.formatearFechaParaDisplay(fecha),
+                horario: `${horaInicio}-${horaFin}`,
+                usuario: userName,
+                timestamp: new Date().getTime(),
+                checkinRealizado: false
+            };
+
+            // Guardar reserva
+            if (window.guardarReserva(reserva)) {
+                // Actualizar estado de la plaza
+                window.actualizarEstadoPlaza(plazaSeleccionadaId, 'reservada', userName);
+
+                // Mostrar confirmación
+                alert(`✅ Reserva confirmada!\n\nPlaza: #${reserva.plazaNumero}\nFecha: ${reserva.fecha}\nHorario: ${reserva.horario}\n\n⚠️ Recordá hacer check-in al llegar`);
+
+                // Redirigir a checkin
+                window.location.href = 'checkin.html';
+            } else {
+                alert('❌ Error al confirmar reserva. Por favor intentá nuevamente.');
+            }
+        }
+
+        function volverDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

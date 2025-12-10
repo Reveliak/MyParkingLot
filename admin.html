@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Facilities - MyParkingLot</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <h1>MyParkingLot</h1>
+            </div>
+            <div class="user-info">
+                <span id="userGreeting">Admin</span>
+                <button class="btn-link" onclick="logout()">Salir</button>
+            </div>
+        </header>
+
+        <!-- Panel de Administración -->
+        <main class="admin-container">
+            <h2>Panel de Administración - Facilities</h2>
+            <p class="subtitle">Visualización y control en tiempo real del estacionamiento</p>
+
+            <!-- Estadísticas generales -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🅿️</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total de Plazas</p>
+                        <p class="stat-value" id="totalPlazas">16</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-success">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Libres Ahora</p>
+                        <p class="stat-value" id="libresPlazas">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-warning">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Reservadas</p>
+                        <p class="stat-value" id="reservadasPlazas">0</p>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-danger">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-info">
+                        <p class="stat-label">No-Show</p>
+                        <p class="stat-value" id="noshowPlazas">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de plazas en tiempo real -->
+            <div class="admin-section">
+                <h3>📊 Estado de Plazas (Hoy - <span id="fechaHoy"></span>)</h3>
+
+                <div class="tabla-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Plaza</th>
+                                <th>Estado</th>
+                                <th>Asignado a</th>
+                                <th>Tipo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablePlazas">
+                            <!-- Se cargará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lista de espera -->
+            <div class="admin-section">
+                <h3>⏳ Lista de Espera</h3>
+
+                <div id="listaEsperaContainer">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Reportes y estadísticas -->
+            <div class="admin-section">
+                <h3>📈 Estadísticas y Reportes</h3>
+
+                <div class="reportes-grid">
+                    <div class="reporte-card">
+                        <h4>Esta Semana</h4>
+                        <ul>
+                            <li>Tasa de ocupación: <strong id="tasaSemana">68%</strong></li>
+                            <li>Total reservas: <strong id="reservasSemana">42</strong></li>
+                            <li>No-shows: <strong id="noshowsSemana">3</strong></li>
+                            <li>Liberaciones voluntarias: <strong id="liberacionesSemana">8</strong></li>
+                        </ul>
+                    </div>
+
+                    <div class="reporte-card">
+                        <h4>Este Mes</h4>
+                        <ul>
+                            <li>Tasa de ocupación: <strong id="tasaMes">65%</strong></li>
+                            <li>Total reservas: <strong id="reservasMes">187</strong></li>
+                            <li>No-shows: <strong id="noshowsMes">12</strong></li>
+                            <li>Liberaciones voluntarias: <strong id="liberacionesMes">34</strong></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <button class="btn btn-primary" onclick="descargarReporte()">
+                        📥 DESCARGAR REPORTE SEMANAL
+                    </button>
+
+                    <button class="btn btn-secondary" onclick="ajustarReglas()">
+                        ⚙️ AJUSTAR REGLAS DEL SISTEMA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Historial reciente -->
+            <div class="admin-section">
+                <h3>🕐 Historial Reciente</h3>
+
+                <div class="historial-container" id="historialContainer">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>MyParkingLot - Panel Administrativo</p>
+            <p class="small">Última actualización: <span id="ultimaActualizacion"></span></p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Inicializar al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            inicializarAdmin();
+            iniciarActualizacionAutomatica();
+        });
+
+        function inicializarAdmin() {
+            // Verificar autenticación de admin
+            const userType = sessionStorage.getItem('userType');
+            const userName = sessionStorage.getItem('userName');
+
+            if (!userType || userType !== 'admin') {
+                alert('Acceso denegado. Esta área es solo para administradores.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = userName;
+
+            // Cargar fecha actual
+            document.getElementById('fechaHoy').textContent = window.getFechaActual();
+
+            // Cargar todos los datos
+            cargarEstadisticas();
+            cargarTablePlazas();
+            cargarListaEspera();
+            cargarHistorial();
+            cargarReportes();
+
+            // Actualizar timestamp
+            actualizarTimestamp();
+        }
+
+        function cargarEstadisticas() {
+            const plazas = window.MOCK_DATA.plazas;
+
+            const total = plazas.length;
+            const libres = plazas.filter(p => p.estado === 'libre').length;
+            const reservadas = plazas.filter(p => p.estado === 'reservada').length;
+            const noshows = plazas.filter(p => p.estado === 'no-show').length;
+
+            document.getElementById('totalPlazas').textContent = total;
+            document.getElementById('libresPlazas').textContent = libres;
+            document.getElementById('reservadasPlazas').textContent = reservadas;
+            document.getElementById('noshowPlazas').textContent = noshows;
+        }
+
+        function cargarTablePlazas() {
+            const tbody = document.getElementById('tablePlazas');
+            tbody.innerHTML = '';
+
+            const plazas = window.MOCK_DATA.plazas;
+
+            plazas.forEach(plaza => {
+                const row = document.createElement('tr');
+
+                let estadoClass = '';
+                let estadoTexto = '';
+
+                switch(plaza.estado) {
+                    case 'libre':
+                        estadoClass = 'badge-success';
+                        estadoTexto = 'Libre';
+                        break;
+                    case 'reservada':
+                        estadoClass = 'badge-warning';
+                        estadoTexto = 'Reservada';
+                        break;
+                    case 'ocupada':
+                        estadoClass = 'badge-info';
+                        estadoTexto = 'Ocupada';
+                        break;
+                    case 'no-show':
+                        estadoClass = 'badge-danger';
+                        estadoTexto = `No-show (${plaza.tiempoNoShow || '10 min'})`;
+                        break;
+                }
+
+                row.innerHTML = `
+                    <td><strong>#${plaza.numero}</strong></td>
+                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                    <td>${plaza.asignadoA || '-'}</td>
+                    <td>${plaza.tipo === 'fija' ? '🔒 Fija' : 'General'}</td>
+                    <td>
+                        ${plaza.estado === 'no-show' ?
+                            `<button class="btn-small btn-danger" onclick="liberarPlaza(${plaza.id})">Liberar</button>` :
+                            '-'
+                        }
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function cargarListaEspera() {
+            const container = document.getElementById('listaEsperaContainer');
+            const listaEspera = window.MOCK_DATA.listaEspera;
+
+            if (listaEspera.length === 0) {
+                container.innerHTML = '<p class="text-muted"><em>No hay usuarios en lista de espera en este momento</em></p>';
+                return;
+            }
+
+            let html = '<div class="lista-espera-items">';
+
+            listaEspera.forEach((item, index) => {
+                html += `
+                    <div class="lista-item">
+                        <div class="lista-numero">${index + 1}</div>
+                        <div class="lista-info">
+                            <p><strong>${item.usuarioNombre}</strong></p>
+                            <p class="text-small">Fecha: ${item.fecha} | Horario: ${item.horario}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function cargarHistorial() {
+            const container = document.getElementById('historialContainer');
+            const historial = window.MOCK_DATA.historialReservas;
+
+            if (historial.length === 0) {
+                container.innerHTML = '<p class="text-muted"><em>No hay historial disponible</em></p>';
+                return;
+            }
+
+            let html = '<ul class="historial-list">';
+
+            // Mostrar solo los últimos 5
+            historial.slice(-5).reverse().forEach(item => {
+                const icon = item.estado === 'completada' ? '✅' :
+                             item.estado === 'no-show' ? '⏰' : '⏳';
+
+                html += `
+                    <li>
+                        <span class="historial-icon">${icon}</span>
+                        <span class="historial-texto">
+                            ${item.usuario} - Plaza #${item.plazaId} - ${item.fecha} ${item.horario}
+                            ${item.estado === 'no-show' ? '<span class="badge-danger">No-show</span>' : ''}
+                        </span>
+                    </li>
+                `;
+            });
+
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        function cargarReportes() {
+            const stats = window.MOCK_DATA.estadisticas;
+
+            // Semana
+            document.getElementById('tasaSemana').textContent = stats.semanaActual.tasaOcupacion + '%';
+            document.getElementById('reservasSemana').textContent = stats.semanaActual.reservasTotal;
+            document.getElementById('noshowsSemana').textContent = stats.semanaActual.noShowsTotal;
+            document.getElementById('liberacionesSemana').textContent = stats.semanaActual.liberacionesVoluntarias;
+
+            // Mes
+            document.getElementById('tasaMes').textContent = stats.mesActual.tasaOcupacion + '%';
+            document.getElementById('reservasMes').textContent = stats.mesActual.reservasTotal;
+            document.getElementById('noshowsMes').textContent = stats.mesActual.noShowsTotal;
+            document.getElementById('liberacionesMes').textContent = stats.mesActual.liberacionesVoluntarias;
+        }
+
+        function liberarPlaza(plazaId) {
+            const confirmacion = confirm('¿Confirmar liberación manual de esta plaza?');
+
+            if (!confirmacion) return;
+
+            // Liberar plaza
+            window.actualizarEstadoPlaza(plazaId, 'libre', null);
+
+            // Notificar al próximo en espera
+            window.notificarProximoEnEspera();
+
+            // Recargar tabla
+            cargarTablePlazas();
+            cargarEstadisticas();
+            cargarListaEspera();
+
+            window.mostrarNotificacion('Plaza liberada exitosamente', 'success');
+        }
+
+        function descargarReporte() {
+            alert('📥 Descargando reporte semanal...\n\nEn un prototipo real, esto generaría un archivo PDF o Excel con las estadísticas completas.');
+        }
+
+        function ajustarReglas() {
+            alert('⚙️ Ajuste de reglas del sistema\n\nEn un prototipo real, aquí se podrían modificar:\n• Tiempo de check-in (actualmente 10 min)\n• Prioridades de asignación\n• Horarios de operación\n• Reglas de penalización por no-show');
+        }
+
+        function actualizarTimestamp() {
+            const ahora = new Date();
+            document.getElementById('ultimaActualizacion').textContent =
+                ahora.toLocaleTimeString('es-AR');
+        }
+
+        function iniciarActualizacionAutomatica() {
+            // Actualizar cada 30 segundos (simulación de tiempo real)
+            setInterval(() => {
+                cargarEstadisticas();
+                cargarTablePlazas();
+                cargarListaEspera();
+                actualizarTimestamp();
+            }, 30000);
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

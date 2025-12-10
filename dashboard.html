@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyParkingLot - Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header con navegación -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <h1>MyParkingLot</h1>
+            </div>
+            <div class="user-info">
+                <span id="userGreeting">Hola, Usuario</span>
+                <button class="btn-link" onclick="logout()">Salir</button>
+            </div>
+        </header>
+
+        <!-- Pantalla principal (Dashboard) -->
+        <main class="dashboard-container">
+            <h2>¿Qué necesitás hoy?</h2>
+
+            <!-- Estado actual del usuario -->
+            <div class="status-card" id="userStatus">
+                <div class="status-icon">ℹ️</div>
+                <div class="status-content">
+                    <h3>Estado actual</h3>
+                    <p id="statusText">Cargando...</p>
+                </div>
+            </div>
+
+            <!-- Acciones principales -->
+            <div class="actions-grid">
+                <!-- Card 1: Reservar Plaza (para usuarios sin plaza fija) -->
+                <div class="action-card" id="cardReservar">
+                    <div class="card-icon">🚗</div>
+                    <h3>¿Necesitás estacionar hoy?</h3>
+                    <p>Reservá una plaza disponible para tu horario</p>
+                    <button class="btn btn-primary" onclick="goToReservar()">
+                        RESERVAR PLAZA
+                    </button>
+                </div>
+
+                <!-- Card 2: Liberar Plaza (para usuarios con plaza asignada) -->
+                <div class="action-card" id="cardLiberar" style="display: none;">
+                    <div class="card-icon">🤝</div>
+                    <h3>¿Tenés plaza asignada?</h3>
+                    <p>Liberá tu plaza si hoy no la vas a usar</p>
+                    <button class="btn btn-secondary" onclick="goToLiberar()">
+                        LIBERAR MI PLAZA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="info-section">
+                <h3>Disponibilidad actual</h3>
+                <div class="availability-summary" id="availabilitySummary">
+                    <div class="stat">
+                        <span class="stat-number" id="totalPlazas">16</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number stat-success" id="libresPlazas">0</span>
+                        <span class="stat-label">Libres</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number stat-danger" id="ocupadasPlazas">0</span>
+                        <span class="stat-label">Ocupadas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reglas importantes -->
+            <div class="info-box">
+                <p><strong>📋 Reglas importantes:</strong></p>
+                <ul>
+                    <li>Las reservas requieren check-in al llegar al edificio</li>
+                    <li>Si no hacés check-in en 10 minutos, la plaza se libera automáticamente</li>
+                    <li>Podés liberar tu plaza en cualquier momento</li>
+                    <li>El sistema notifica automáticamente a usuarios en lista de espera</li>
+                </ul>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>MyParkingLot - Prototipo Low-Fidelity</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Inicializar dashboard al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            initDashboard();
+        });
+
+        function initDashboard() {
+            // Verificar autenticación
+            const userType = sessionStorage.getItem('userType');
+            const userName = sessionStorage.getItem('userName');
+
+            if (!userType || !userName) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Mostrar saludo personalizado
+            document.getElementById('userGreeting').textContent = `Hola, ${userName}`;
+
+            // Cargar estado del usuario
+            loadUserStatus(userType);
+
+            // Mostrar/ocultar cards según tipo de usuario
+            if (userType === 'fixed') {
+                // Usuario con plaza fija: mostrar ambas opciones
+                document.getElementById('cardReservar').style.display = 'block';
+                document.getElementById('cardLiberar').style.display = 'block';
+            } else {
+                // Usuario sin plaza fija: solo mostrar reservar
+                document.getElementById('cardReservar').style.display = 'block';
+                document.getElementById('cardLiberar').style.display = 'none';
+            }
+
+            // Cargar disponibilidad general
+            loadAvailability();
+        }
+
+        function loadUserStatus(userType) {
+            const statusText = document.getElementById('statusText');
+            const reservaActual = localStorage.getItem('reservaActual');
+
+            if (reservaActual) {
+                const reserva = JSON.parse(reservaActual);
+                statusText.innerHTML = `
+                    <strong>✅ Tenés una reserva activa</strong><br>
+                    Plaza: #${reserva.plazaId}<br>
+                    Fecha: ${reserva.fecha}<br>
+                    Horario: ${reserva.horario}
+                `;
+            } else if (userType === 'fixed') {
+                statusText.innerHTML = `
+                    <strong>Plaza asignada: #18</strong><br>
+                    Sin reserva adicional en este momento
+                `;
+            } else {
+                statusText.textContent = 'Sin reserva activa en este momento';
+            }
+        }
+
+        function loadAvailability() {
+            // Cargar disponibilidad desde MOCK_DATA
+            if (!window.MOCK_DATA || !window.MOCK_DATA.plazas) {
+                console.error('MOCK_DATA no está disponible');
+                return;
+            }
+
+            const plazas = window.MOCK_DATA.plazas;
+            const libres = plazas.filter(p => p.estado === 'libre').length;
+            const ocupadas = plazas.filter(p => p.estado === 'ocupada' || p.estado === 'reservada').length;
+
+            document.getElementById('totalPlazas').textContent = plazas.length;
+            document.getElementById('libresPlazas').textContent = libres;
+            document.getElementById('ocupadasPlazas').textContent = ocupadas;
+        }
+
+        function goToReservar() {
+            window.location.href = 'reservar.html';
+        }
+
+        function goToLiberar() {
+            window.location.href = 'liberar.html';
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
